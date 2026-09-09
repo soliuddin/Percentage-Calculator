@@ -1,0 +1,747 @@
+/* ============================================================
+   Percentage Calculator — glass / neon design system
+   Light theme = soft frosted glass. Dark theme = neon glass.
+   Both are driven by the same CSS variables, swapped via
+   :root[data-theme="dark"], so every component below only ever
+   references variables — never a hard-coded color.
+   ============================================================ */
+
+:root{
+  --bg-1: #EDE7D8;
+  --bg-2: #F2E7C7;
+  --bg-3: #E8DBC3;
+
+  --glass: rgba(255,251,242,0.68);
+  --glass-strong: rgba(255,253,247,0.94);
+  --glass-border: rgba(156,122,41,0.35);
+
+  --ink: #1B2A44;
+  --ink-soft: #4A5570;
+
+  --neon-cyan: #8C6D22;
+  --neon-violet: #7A2E2E;
+  --neon-pink: #A6362C;
+
+  --accent-grad: linear-gradient(135deg, var(--neon-cyan), var(--neon-violet));
+  --glow: 0 0 20px rgba(140,109,34,0.32);
+  --glow-strong: 0 0 30px rgba(122,46,46,0.28);
+  --shadow-card: 0 22px 50px rgba(70,50,20,0.20), inset 0 1px 0 rgba(255,255,255,0.65);
+
+  --blob-opacity: 0.4;
+}
+
+:root[data-theme="dark"]{
+  --bg-1: #12100B;
+  --bg-2: #201A0E;
+  --bg-3: #1A1410;
+
+  --glass: rgba(255,255,255,0.055);
+  --glass-strong: rgba(255,255,255,0.10);
+  --glass-border: rgba(216,179,74,0.22);
+
+  --ink: #EDE7D8;
+  --ink-soft: #B8AE93;
+
+  --neon-cyan: #D8B34A;
+  --neon-violet: #C97B6B;
+  --neon-pink: #E0685C;
+
+  --accent-grad: linear-gradient(135deg, var(--neon-cyan), var(--neon-violet));
+  --glow: 0 0 22px rgba(216,179,74,0.42);
+  --glow-strong: 0 0 32px rgba(201,123,107,0.38);
+  --shadow-card: 0 20px 60px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06);
+
+  --blob-opacity: 0.4;
+}
+
+*{ box-sizing: border-box; }
+
+html{ color-scheme: light; }
+html[data-theme="dark"]{ color-scheme: dark; }
+
+body{
+  margin:0;
+  min-height:100vh;
+  padding: 28px 14px 60px;
+  background: var(--bg-1);
+  font-family: 'Tiro Bangla', serif;
+  color: var(--ink);
+  display:flex;
+  justify-content:center;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Ambient glowing blobs behind the glass card. Fixed + blurred + behind
+   everything (z-index -1); purely decorative (aria-hidden). */
+.bg-fx{
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(1100px 750px at 12% -8%, var(--bg-2), transparent 55%),
+    radial-gradient(1100px 750px at 100% 105%, var(--bg-3), transparent 55%),
+    linear-gradient(160deg, var(--bg-1), var(--bg-1) 55%, var(--bg-2) 130%);
+  transition: background-color 0.3s ease;
+}
+.blob{
+  position:absolute;
+  border-radius:50%;
+  filter: blur(64px);
+  opacity: var(--blob-opacity);
+  will-change: transform;
+  animation: float 16s ease-in-out infinite;
+}
+.blob-a{ width:380px; height:380px; top:-120px; left:-100px; background: var(--neon-cyan); }
+.blob-b{ width:340px; height:340px; bottom:-140px; right:-90px; background: var(--neon-violet); animation-delay: -5s; }
+.blob-c{ width:260px; height:260px; top:45%; left:65%; background: var(--neon-pink); animation-delay: -10s; }
+
+@keyframes float{
+  0%, 100% { transform: translate(0,0) scale(1); }
+  50%      { transform: translate(24px,-28px) scale(1.08); }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .blob{ animation: none; }
+}
+
+.sheet{
+  width:100%;
+  max-width: 640px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 26px;
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  position:relative;
+  overflow: hidden;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Fallback for browsers without backdrop-filter support: make the glass
+   panel solid enough to stay readable. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))){
+  .sheet{ background: var(--glass-strong); }
+}
+
+.sheet::before{
+  content:"";
+  position:absolute;
+  top:0; left:0; right:0;
+  height:1px;
+  background: linear-gradient(90deg, transparent, var(--neon-cyan), var(--neon-violet), transparent);
+  opacity: 0.6;
+}
+
+/* ---------- Toggle row: mode switch + theme switch ---------- */
+.toggle-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap: 10px;
+  padding: 16px 16px 0;
+}
+
+.mode-toggle,
+.theme-toggle{
+  display:flex;
+  align-items:center;
+  gap: 7px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-strong);
+  color: var(--ink);
+  font-family:'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing:0.05em;
+  padding: 8px 13px;
+  border-radius: 999px;
+  cursor:pointer;
+  backdrop-filter: blur(8px);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+.mode-toggle:hover{ border-color: var(--neon-violet); box-shadow: var(--glow-strong); }
+.theme-toggle:hover{ border-color: var(--neon-cyan); box-shadow: var(--glow); }
+.mode-toggle:active,
+.theme-toggle:active{ transform: scale(0.96); }
+
+.mode-toggle[aria-pressed="true"]{
+  border-color: var(--neon-violet);
+  box-shadow: var(--glow-strong);
+}
+
+.mode-icon{ font-size: 13px; line-height:1; color: var(--neon-violet); }
+.theme-icon{ font-size: 13px; line-height:1; color: var(--neon-cyan); }
+
+/* ---------- Header ---------- */
+.head{
+  text-align:center;
+  padding: 22px 20px 18px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.head .board{
+  font-family:'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--neon-cyan);
+  margin-bottom: 6px;
+}
+
+.head h1{
+  font-size: 26px;
+  font-weight:600;
+  margin: 0 0 4px;
+  line-height:1.25;
+  background: var(--accent-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.head p{
+  margin:0;
+  font-size:12.5px;
+  color: var(--ink-soft);
+  font-style: italic;
+}
+
+/* ================================================================
+   QUICK CALCULATOR — everyday "part / whole × 100" mode
+   ================================================================ */
+.quick-calc{
+  display:none;
+  flex-direction: column;
+  align-items:center;
+  gap: 6px;
+  padding: 28px 20px 32px;
+  border-bottom: 1px solid var(--glass-border);
+}
+.quick-calc.show{ display:flex; }
+
+.quick-kicker{
+  font-family:'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  color: var(--neon-violet);
+  margin-bottom: 16px;
+}
+
+/* --- Percentage circle --- */
+.quick-ring{
+  --p: 0;
+  width: 196px;
+  height: 196px;
+  border-radius: 50%;
+  padding: 11px;
+  background: conic-gradient(
+    from -90deg,
+    var(--neon-cyan) 0%,
+    var(--neon-violet) calc(var(--p) * 1%),
+    var(--glass-border) calc(var(--p) * 1%)
+  );
+  box-shadow: var(--glow-strong), 0 18px 40px rgba(0,0,0,0.12);
+  transition: background 0.35s ease;
+  margin-bottom: 6px;
+  position: relative;
+}
+.quick-ring::after{
+  content:"";
+  position:absolute;
+  inset: -6px;
+  border-radius:50%;
+  border: 1px dashed var(--glass-border);
+  pointer-events:none;
+}
+.quick-ring-inner{
+  width:100%;
+  height:100%;
+  border-radius:50%;
+  background: var(--glass-strong);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(10px);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap: 3px;
+  box-shadow: inset 0 2px 12px rgba(0,0,0,0.10), inset 0 -2px 16px rgba(255,255,255,0.08);
+}
+.quick-pct-row{ display:flex; align-items:baseline; }
+.quick-pct{
+  font-family:'IBM Plex Mono', monospace;
+  font-size: 40px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height:1;
+}
+.quick-pct-sign{
+  font-family:'IBM Plex Mono', monospace;
+  font-size: 18px;
+  color: var(--ink-soft);
+  margin-left: 2px;
+}
+.quick-pct-caption{
+  font-family:'IBM Plex Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  color: var(--ink-soft);
+}
+
+/* --- Value / Total input card --- */
+.quick-input-card{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap: 12px;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 420px;
+  margin-top: 26px;
+  padding: 18px 16px;
+  border-radius: 22px;
+  background: var(--glass-strong);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-card);
+}
+.qf{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap: 8px;
+  flex: 1 1 120px;
+  min-width: 108px;
+}
+.qf-label{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap: 6px;
+  font-family:'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing:0.1em;
+  color: var(--ink-soft);
+}
+.qf-dot{
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display:inline-block;
+}
+.qf-dot-a{ background: var(--neon-cyan); box-shadow: 0 0 7px var(--neon-cyan); }
+.qf-dot-b{ background: var(--neon-violet); box-shadow: 0 0 7px var(--neon-violet); }
+
+.qf-input{
+  width: 100%;
+  background: var(--glass);
+  border: 1.5px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 13px 8px;
+  font-family:'IBM Plex Mono', monospace;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--ink);
+  text-align:center;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+.qf-input::placeholder{ color: var(--ink-soft); opacity: 0.55; font-weight: 400; }
+.qf-input:focus{
+  outline:none;
+  border-color: var(--neon-cyan);
+  background: var(--glass-strong);
+  box-shadow: 0 0 0 4px rgba(47,230,217,0.16);
+}
+
+.qf-op{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap: 2px;
+  padding: 14px 2px 0;
+  flex: 0 0 auto;
+}
+.qf-op-symbol{
+  font-family:'IBM Plex Mono', monospace;
+  font-size: 19px;
+  font-weight:700;
+  color: var(--neon-violet);
+  line-height:1;
+}
+.qf-op-text{
+  font-family:'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing:0.08em;
+  color: var(--ink-soft);
+}
+
+.swap-btn{
+  flex: 0 0 auto;
+  align-self:center;
+  margin-top: 14px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
+  color: var(--neon-violet);
+  font-size: 17px;
+  line-height:1;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.35s ease;
+}
+.swap-btn:hover{
+  border-color: var(--neon-violet);
+  box-shadow: var(--glow-strong);
+  transform: rotate(180deg);
+}
+
+.quick-formula{
+  text-align:center;
+  font-family:'IBM Plex Mono', monospace;
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin: 22px 0 2px;
+}
+.quick-formula strong{
+  color: var(--ink);
+  font-size: 15px;
+}
+.quick-hint{
+  text-align:center;
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  font-style: italic;
+  line-height:1.6;
+  margin: 6px 10px 0;
+}
+
+/* ================================================================
+   BOARD CALCULATOR — Madhyamik / Uccha Madhyamik / Graduation
+   (same calculation logic as before, restyled only)
+   ================================================================ */
+.worksheet{ display:block; }
+.worksheet.hide{ display:none; }
+
+.tabs{
+  display:flex;
+  gap: 4px;
+  padding: 10px 12px 0;
+}
+.tab{
+  flex:1;
+  padding: 11px 8px;
+  text-align:center;
+  font-family:'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  letter-spacing:0.03em;
+  cursor:pointer;
+  background: transparent;
+  color: var(--ink-soft);
+  border:none;
+  border-radius: 12px;
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+.tab.active{
+  background: var(--accent-grad);
+  color: #06070d;
+  font-weight:700;
+  box-shadow: var(--glow);
+}
+
+.streams{
+  display:none;
+  gap: 4px;
+  padding: 10px 12px 0;
+}
+.streams.show{ display:flex; flex-wrap:wrap; }
+.stream-btn{
+  flex:1;
+  min-width: 90px;
+  padding: 9px 6px;
+  text-align:center;
+  font-family:'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing:0.04em;
+  cursor:pointer;
+  background: var(--glass);
+  color: var(--ink-soft);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  transition: border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+.stream-btn.active{
+  color: var(--neon-pink);
+  border-color: var(--neon-pink);
+  box-shadow: 0 0 14px rgba(214,51,108,0.25);
+  font-weight:600;
+}
+
+.shortcut-switch{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap: 8px;
+  padding: 14px 20px;
+  margin-top: 8px;
+  border-top: 1px solid var(--glass-border);
+  border-bottom: 1px solid var(--glass-border);
+}
+.shortcut-label{
+  font-family:'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing:0.06em;
+  color: var(--ink-soft);
+}
+.shortcut-btn{
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
+  color: var(--ink-soft);
+  font-family:'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor:pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+.shortcut-btn:hover{ border-color: var(--neon-cyan); }
+.shortcut-btn.active{
+  background: var(--accent-grad);
+  border-color: transparent;
+  color: #06070d;
+  font-weight:600;
+}
+
+.body-pad{ padding: 20px 20px 8px; }
+
+.rule-note{
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  line-height:1.55;
+  margin: 0 0 18px;
+  padding: 10px 12px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-left: 3px solid var(--neon-cyan);
+  border-radius: 0 10px 10px 0;
+}
+
+table.subjects{
+  width:100%;
+  border-collapse: collapse;
+  margin-bottom: 14px;
+}
+table.subjects thead th{
+  font-family:'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing:0.06em;
+  color: var(--ink-soft);
+  text-align:left;
+  font-weight:500;
+  padding: 0 6px 8px;
+  border-bottom: 1px solid var(--glass-border);
+}
+table.subjects thead th.num,
+table.subjects thead th.chk{ text-align:center; }
+
+table.subjects tbody td{
+  padding: 7px 6px;
+  border-bottom: 1px solid var(--glass-border);
+  vertical-align:middle;
+}
+
+.rowno{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:12px;
+  color: var(--ink-soft);
+  width: 22px;
+}
+
+.subj-name{
+  width: 100%;
+  border:none;
+  background: transparent;
+  border-bottom: 1px dashed var(--glass-border);
+  font-family:'Tiro Bangla', serif;
+  font-size: 14px;
+  color: var(--ink);
+  padding: 4px 2px;
+}
+.subj-name:focus{ outline:none; border-bottom-color: var(--neon-cyan); }
+
+input.num{
+  width: 62px;
+  text-align:right;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-strong);
+  font-family:'IBM Plex Mono', monospace;
+  font-size: 13px;
+  color: var(--ink);
+  padding: 5px 6px;
+  border-radius: 6px;
+}
+input.num:focus{ outline:none; border-color: var(--neon-cyan); box-shadow: 0 0 0 3px rgba(47,230,217,0.15); }
+input.num.invalid{ border-color: var(--neon-pink); background: rgba(214,51,108,0.10); }
+
+td.chk{ text-align:center; }
+input[type="checkbox"]{
+  width: 16px; height:16px;
+  accent-color: var(--neon-violet);
+  cursor:pointer;
+}
+
+td.rm{ text-align:center; }
+.rm-btn{
+  border:none;
+  background:none;
+  color: var(--neon-pink);
+  font-family:'IBM Plex Mono', monospace;
+  font-size: 15px;
+  cursor:pointer;
+  line-height:1;
+  padding: 2px 6px;
+}
+.rm-btn:hover{ opacity:0.7; }
+
+.row-actions{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom: 22px;
+}
+.add-btn{
+  border: 1px solid var(--glass-border);
+  background: var(--glass-strong);
+  color: var(--ink);
+  font-family:'IBM Plex Mono', monospace;
+  font-size: 12px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor:pointer;
+  letter-spacing:0.03em;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.add-btn:hover{ border-color: var(--neon-cyan); box-shadow: var(--glow); }
+
+.hint{
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  font-family:'IBM Plex Mono', monospace;
+}
+
+.result{
+  margin: 4px 20px 26px;
+  border-top: 1px solid var(--glass-border);
+  padding-top: 20px;
+  display:flex;
+  align-items:center;
+  gap: 22px;
+}
+
+.seal{
+  flex-shrink:0;
+  width: 108px;
+  height:108px;
+  border-radius:50%;
+  border: 3px solid transparent;
+  background:
+    linear-gradient(var(--glass-strong), var(--glass-strong)) padding-box,
+    var(--accent-grad) border-box;
+  box-shadow: var(--glow);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+}
+.seal .pct{
+  font-family:'IBM Plex Mono', monospace;
+  font-size: 26px;
+  font-weight:700;
+  color: var(--ink);
+  line-height:1;
+}
+.seal .pct-sign{ font-size: 14px; }
+.seal .grade{
+  margin-top:4px;
+  font-family:'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  color: var(--neon-violet);
+  letter-spacing:0.06em;
+  text-align:center;
+  padding: 0 6px;
+}
+
+.result-detail{ flex:1; min-width:0; }
+.result-detail .line{
+  display:flex;
+  justify-content:space-between;
+  font-family:'IBM Plex Mono', monospace;
+  font-size: 12.5px;
+  padding: 3px 0;
+  border-bottom: 1px dotted var(--glass-border);
+  color: var(--ink-soft);
+}
+.result-detail .line span:last-child{
+  color: var(--ink);
+  font-weight:600;
+}
+.result-detail .line.total span:last-child{
+  color: var(--neon-pink);
+}
+
+.warning{
+  margin: 0 20px 18px;
+  padding: 8px 12px;
+  background: rgba(214,51,108,0.10);
+  border: 1px solid rgba(214,51,108,0.35);
+  border-left: 3px solid var(--neon-pink);
+  border-radius: 0 8px 8px 0;
+  color: var(--neon-pink);
+  font-size: 12px;
+  font-family:'IBM Plex Mono', monospace;
+  display:none;
+}
+.warning.show{ display:block; }
+
+.foot-note{
+  padding: 0 20px 22px;
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  line-height:1.6;
+  font-style: italic;
+}
+
+.credit{
+  margin:0;
+  padding: 0 20px 20px;
+  text-align:center;
+  font-family:'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing:0.04em;
+  color: var(--neon-violet);
+}
+
+@media (max-width: 420px){
+  .head h1{ font-size: 21px; }
+  input.num{ width: 50px; }
+  .result{ flex-direction:column; align-items:flex-start; gap:16px; }
+  .seal{ align-self:center; }
+  .theme-toggle .theme-label,
+  .mode-toggle .mode-label{ display:none; }
+  .theme-toggle, .mode-toggle{ padding: 8px 10px; }
+  .toggle-row{ padding: 12px 12px 0; }
+  .shortcut-switch{ padding: 12px 14px; }
+  .shortcut-btn{ font-size: 10.5px; padding: 5px 9px; }
+  .quick-ring{ width: 156px; height:156px; }
+  .quick-pct{ font-size: 32px; }
+  .quick-input-card{ flex-direction: column; padding: 16px 14px; gap: 10px; }
+  .qf{ width: 100%; flex: 1 1 auto; }
+  .qf-op{ flex-direction: row; padding: 4px 0; gap: 6px; }
+  .swap-btn{ margin-top: 2px; }
+}

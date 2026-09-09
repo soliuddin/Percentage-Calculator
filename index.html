@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!--
+  Security headers via <meta http-equiv>: this is a static site (GitHub
+  Pages), which cannot set real HTTP response headers, so CSP and a few
+  other protections are declared here instead. See SECURITY.md in this
+  repo for how to add the headers a host CAN'T express this way
+  (X-Content-Type-Options, X-Frame-Options, HSTS) if you deploy somewhere
+  that supports custom headers (Cloudflare Pages, Netlify, etc.).
+-->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'none';
+  script-src 'self';
+  style-src 'self' https://fonts.googleapis.com;
+  font-src https://fonts.gstatic.com;
+  img-src 'self';
+  manifest-src 'self';
+  connect-src 'none';
+  form-action 'none';
+  base-uri 'none';
+  frame-ancestors 'none';
+  object-src 'none';
+  upgrade-insecure-requests;
+">
+<meta http-equiv="Referrer-Policy" content="no-referrer">
+<meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=(), payment=(), usb=()">
+<meta name="robots" content="index, follow">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#12100B">
+
+<title>Madhyamik, Uccha Madhyamik &amp; Graduation Percentage Calculator</title>
+
+<!-- Favicon (browser tabs) -->
+<link rel="icon" href="icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="48x48" href="icons/favicon-48.png">
+
+<!-- Homescreen / "Add to Home Screen" icon -->
+<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="% Calculator">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="% Calculator">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tiro+Bangla:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="sheet">
+  <div class="toggle-row">
+    <button class="mode-toggle" id="modeToggle" type="button" aria-label="Switch to the everyday quick percentage calculator" aria-pressed="false" title="Quick % calculator">
+      <span class="mode-icon" id="modeIcon" aria-hidden="true">&#9889;</span>
+      <span class="mode-label" id="modeLabel">QUICK CALC</span>
+    </button>
+    <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch between light and dark theme" title="Switch theme">
+      <span class="theme-icon" id="themeIcon" aria-hidden="true">&#9789;</span>
+      <span class="theme-label" id="themeLabel">DARK</span>
+    </button>
+  </div>
+
+  <div class="head">
+    <div class="board">WBBSE / WBCHSE / UNIVERSITY — RESULT WORKSHEET</div>
+    <h1>Percentage Calculator</h1>
+    <p>for Madhyamik, Uccha Madhyamik &amp; Graduation mark sheets — plus an everyday quick calculator</p>
+  </div>
+
+  <!-- Everyday "part of a whole" calculator: divide, then multiply by 100 -->
+  <section class="quick-calc" id="quickCalc" aria-hidden="true">
+    <div class="quick-kicker">EVERYDAY SHORTCUT</div>
+
+    <div class="quick-ring" id="quickRing" style="--p:0">
+      <div class="quick-ring-inner">
+        <div class="quick-pct-row"><span class="quick-pct" id="quickPctValue">0</span><span class="quick-pct-sign">%</span></div>
+        <span class="quick-pct-caption">RESULT</span>
+      </div>
+    </div>
+
+    <div class="quick-input-card">
+      <label class="qf" for="quickPart">
+        <span class="qf-label"><span class="qf-dot qf-dot-a"></span>VALUE</span>
+        <input class="qf-input" id="quickPart" type="number" inputmode="decimal" step="any" placeholder="45">
+      </label>
+
+      <div class="qf-op" aria-hidden="true">
+        <span class="qf-op-symbol">%</span>
+        <span class="qf-op-text">of</span>
+      </div>
+
+      <label class="qf" for="quickWhole">
+        <span class="qf-label"><span class="qf-dot qf-dot-b"></span>TOTAL</span>
+        <input class="qf-input" id="quickWhole" type="number" inputmode="decimal" step="any" placeholder="60">
+      </label>
+
+      <button class="swap-btn" id="quickSwap" type="button" title="Swap value and total" aria-label="Swap value and total">&#8646;</button>
+    </div>
+
+    <p class="quick-formula" id="quickFormula"><span id="qfPart">0</span> &divide; <span id="qfWhole">0</span> &times; 100 = <strong id="qfResult">0%</strong></p>
+    <p class="quick-hint">The everyday shortcut: divide the part by the whole, then multiply by 100 — same formula, just for anything (bills, discounts, scores, whatever you're splitting or comparing).</p>
+  </section>
+
+  <div class="worksheet" id="worksheet">
+    <div class="tabs" role="tablist">
+      <button class="tab active" id="tabMP" type="button" role="tab" aria-selected="true">MADHYAMIK &middot; CLASS X</button>
+      <button class="tab" id="tabHS" type="button" role="tab" aria-selected="false">UCCHA MADHYAMIK &middot; CLASS XII</button>
+      <button class="tab" id="tabGrad" type="button" role="tab" aria-selected="false">GRADUATION &middot; UG</button>
+    </div>
+
+    <div class="shortcut-switch" id="shortcutSwitch" role="tablist" aria-label="Quick switch calculator">
+      <span class="shortcut-label">QUICK SWITCH:</span>
+      <button class="shortcut-btn active" id="quickMP" type="button">Madhyamik</button>
+      <button class="shortcut-btn" id="quickHS" type="button">Higher Secondary</button>
+      <button class="shortcut-btn" id="quickGrad" type="button">Graduation</button>
+    </div>
+
+    <div class="streams" id="streamTabs" role="tablist">
+      <button class="stream-btn active" id="streamScience" type="button" role="tab">SCIENCE</button>
+      <button class="stream-btn" id="streamArts" type="button" role="tab">ARTS</button>
+      <button class="stream-btn" id="streamCommerce" type="button" role="tab">COMMERCE</button>
+      <button class="stream-btn" id="streamOther" type="button" role="tab">OTHER</button>
+    </div>
+
+    <div class="streams" id="gradTabs" role="tablist">
+      <button class="stream-btn active" id="gradSemester" type="button" role="tab">SEMESTER (CBCS)</button>
+      <button class="stream-btn" id="gradAnnual" type="button" role="tab">ANNUAL (YEAR-WISE)</button>
+    </div>
+
+    <div class="body-pad">
+      <p class="rule-note" id="ruleNote"></p>
+
+      <table class="subjects">
+        <thead>
+          <tr>
+            <th class="num">#</th>
+            <th>Subject</th>
+            <th class="num">Marks got</th>
+            <th class="num">Full marks</th>
+            <th class="chk">Count</th>
+            <th class="num"></th>
+          </tr>
+        </thead>
+        <tbody id="subjectRows"></tbody>
+      </table>
+
+      <div class="row-actions">
+        <button class="add-btn" id="addSubjectBtn" type="button">+ ADD SUBJECT</button>
+        <span class="hint">tick "Count" for subjects in your final total</span>
+      </div>
+    </div>
+
+    <p class="warning" id="warningBox">Marks obtained is higher than full marks in at least one counted subject — check your entries.</p>
+
+    <div class="result">
+      <div class="seal">
+        <div class="pct" id="pctBig">0.0</div>
+        <div class="grade" id="gradeBig">&mdash;</div>
+      </div>
+      <div class="result-detail">
+        <div class="line"><span>Marks obtained</span><span id="sumObtained">0</span></div>
+        <div class="line"><span>Full marks</span><span id="sumFull">0</span></div>
+        <div class="line total"><span>Percentage</span><span id="sumPct">0.00%</span></div>
+      </div>
+    </div>
+
+    <p class="foot-note">
+      Percentage = (total marks obtained in counted subjects &divide; total full marks of counted subjects) &times; 100.
+      WBBSE and WBCHSE mark sheets do not officially print an overall grade by percentage — the bands shown here (A1, A2, B1 &hellip;) follow the common informal convention students use, not an official scale. Check your actual mark sheet or the board's official notification for the authoritative result.
+    </p>
+  </div>
+
+  <p class="credit">Made with &#10084; MD SOLIUDDIN</p>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
